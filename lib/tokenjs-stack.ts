@@ -43,6 +43,7 @@ export class TokenJsStack extends Stack {
       description: 'AI Gateway Prototype with TokenJS',
       deployOptions: {
         loggingLevel: apigateway.MethodLoggingLevel.INFO,
+        dataTraceEnabled: true,
         metricsEnabled: true,
         accessLogDestination: new apigateway.LogGroupLogDestination(
           new cdk.aws_logs.LogGroup(this, 'TokenJsGatewayAccessLogs', {
