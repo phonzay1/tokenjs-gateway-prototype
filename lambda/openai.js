@@ -18,10 +18,11 @@ exports.handler = async (event) => {
       }
     });
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify(response.data),
-    };
+    // return {
+    //   statusCode: 200,
+    //   body: response.data,
+    // };
+    return response.data;
   } catch (error) {
     console.error('Error:', error);
     return {

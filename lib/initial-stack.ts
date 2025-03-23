@@ -38,8 +38,20 @@ export class InitialStack extends Stack {
     }
     `;
 
-    const responseTemplate = `#set($inputRoot = $input.path('$'))
-    $input.json('$.body')`;
+    const openaiResponseTemplate = `
+    #set($bodyJson = $util.parseJson($input.body))
+    {
+      "id": "$util.escapeJavaScript($bodyJson.id)",
+      "model": "$util.escapeJavaScript($bodyJson.model)",
+      "content": "$util.escapeJavaScript($bodyJson.choices[0].message.content)",
+      "finish_reason": "$util.escapeJavaScript($bodyJson.choices[0].finish_reason)",
+      "usage": {
+        "total_tokens": $bodyJson.usage.total_tokens,
+        "prompt_tokens": $bodyJson.usage.prompt_tokens,
+        "completion_tokens": $bodyJson.usage.completion_tokens
+      }
+    }
+    `;
 
     const openaiIntegration = new apigateway.LambdaIntegration(openaiLambda, {
       proxy: false,
@@ -51,7 +63,7 @@ export class InitialStack extends Stack {
         {
           statusCode: '200',
           responseTemplates: {
-            'application/json': responseTemplate,
+            'application/json': openaiResponseTemplate,
           },
         },
         {
