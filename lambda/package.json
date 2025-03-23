@@ -2,7 +2,7 @@
   "name": "lambda",
   "version": "1.0.0",
   "description": "",
-  "main": "openAI.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,6 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^1.8.4"
+    "token.js": "^0.5.4"
   }
 }
