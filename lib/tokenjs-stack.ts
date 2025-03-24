@@ -3,6 +3,7 @@ import { Stack, StackProps } from "aws-cdk-lib";
 import { Code, Function, Runtime } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as iam from "aws-cdk-lib/aws-iam"
 import * as dotenv from "dotenv";
 
@@ -42,6 +43,7 @@ export class TokenJsStack extends Stack {
     const gateway = new apigateway.RestApi(this, "tokenjsGateway", {
       restApiName: 'TokenJS AI Gateway',
       description: 'AI Gateway Prototype with TokenJS',
+      apiKeySourceType: apigateway.ApiKeySourceType.HEADER,
       deployOptions: {
         loggingLevel: apigateway.MethodLoggingLevel.INFO,
         dataTraceEnabled: true,
@@ -60,6 +62,27 @@ export class TokenJsStack extends Stack {
     });
 
     gateway.node.addDependency(cfnAccount);
+
+    const gatewayKey = new apigateway.ApiKey(this, 'GatewayKey', {
+      apiKeyName: 'gateway-api-key',
+      enabled: true,
+    });
+
+    const basicUsagePlan = gateway.addUsagePlan('BasicUsagePlan', {
+      name: 'BasicUsagePlan',
+      throttle: {
+        rateLimit: 10, // 10 requests per second
+        burstLimit: 20,
+      },
+    });
+
+    basicUsagePlan.addApiKey(gatewayKey);
+    basicUsagePlan.addApiStage({ stage: gateway.deploymentStage });
+
+    // see the AWS console for the actual API key value
+    new cdk.CfnOutput(this, 'GeneratedApiKeyId', {
+      value: gatewayKey.keyId,
+    });
 
     const chatResource = gateway.root.addResource('chat');
     const llmsResource = chatResource.addResource('llms');
@@ -119,6 +142,8 @@ export class TokenJsStack extends Stack {
       proxy: true,
     });
 
-    llmsResource.addMethod("POST", llmsIntegration);
+    llmsResource.addMethod("POST", llmsIntegration, {
+      apiKeyRequired: true,
+    });
   }
 }
