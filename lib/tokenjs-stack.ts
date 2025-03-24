@@ -31,6 +31,7 @@ export class TokenJsStack extends Stack {
       runtime: Runtime.NODEJS_22_X, 
       code: Code.fromAsset("lambda"), 
       handler: "llmCalls.handler", 
+      timeout: cdk.Duration.seconds(60),
       environment: {
         ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
         GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',

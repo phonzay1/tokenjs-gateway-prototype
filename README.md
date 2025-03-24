@@ -16,5 +16,4 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 ## Prototype Implementation
 
 This prototype:
-- Transforms requests and responses from the OpenAI/Anthropic chat completions/messages
-APIs. It does so using request and response templates in the API Gateway itself.
+- Transforms requests and responses using the TokenJS library.
