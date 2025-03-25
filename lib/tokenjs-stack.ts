@@ -33,11 +33,11 @@ export class TokenJsStack extends Stack {
       code: Code.fromAsset("lambda"), 
       handler: "llmCalls.handler", 
       timeout: cdk.Duration.seconds(60),
-      environment: {
-        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
-        GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
-        OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
-      },
+      // environment: {
+      //   ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
+      //   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+      //   OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
+      // },
     });
 
     const gateway = new apigateway.RestApi(this, "tokenjsGateway", {
@@ -79,64 +79,25 @@ export class TokenJsStack extends Stack {
     basicUsagePlan.addApiKey(gatewayKey);
     basicUsagePlan.addApiStage({ stage: gateway.deploymentStage });
 
-    // see the AWS console for the actual API key value
+    // see the AWS console/CLI for the actual API key value
     new cdk.CfnOutput(this, 'GeneratedApiKeyId', {
       value: gatewayKey.keyId,
     });
 
+    // storing all provider API keys in *one* secret
+    const llmApiKeys = new secretsmanager.Secret(this, 'LLMProviderKeys', {
+      secretName: 'llm-provider-api-keys',
+      secretObjectValue: {
+        ANTHROPIC_API_KEY: cdk.SecretValue.unsafePlainText('your-api-key'),
+        GEMINI_API_KEY: cdk.SecretValue.unsafePlainText('your-api-key'),
+        OPENAI_API_KEY: cdk.SecretValue.unsafePlainText('your-api-key'),
+      },
+    });
+    
+    llmApiKeys.grantRead(llmCallsLambda);
+
     const chatResource = gateway.root.addResource('chat');
     const llmsResource = chatResource.addResource('llms');
-
-    // const llmsRequestTemplate = `
-    // #set($inputRoot = $input.path('$'))
-    // {
-    //   "provider": "$inputRoot.provider",  
-    //   "model": "$inputRoot.model",
-    //   "message": "$inputRoot.message"
-    // }
-    // `;
-
-    // const llmsResponseTemplate = `#set($inputRoot = $input.path('$'))
-    // $input.json('$.body')`;
-
-    // const llmsIntegration = new apigateway.LambdaIntegration(llmCallsLambda, {
-    //   proxy: false,
-    //   passthroughBehavior: apigateway.PassthroughBehavior.WHEN_NO_TEMPLATES,
-    //   requestTemplates: {
-    //     'application/json': llmsRequestTemplate,
-    //   },
-    //   integrationResponses: [
-    //     {
-    //       statusCode: '200',
-    //       responseTemplates: {
-    //         'application/json': llmsResponseTemplate,
-    //       },
-    //     },
-    //     {
-    //       selectionPattern: '(4\\d{2})',
-    //       statusCode: '400',
-    //       responseTemplates: {
-    //         'application/json': 'Error: $input.path(\'$.errorMessage\')',
-    //       },
-    //     },
-    //     {
-    //       selectionPattern: '(5\\d{2})',
-    //       statusCode: '500',
-    //       responseTemplates: {
-    //         'application/json': 'Error: $input.path(\'$.errorMessage\')',
-    //       },
-    //     },
-    //   ],
-    // });
-
-    
-    // llmsResource.addMethod('POST', llmsIntegration, {
-    //   methodResponses: [
-    //     { statusCode: '200' },
-    //     { statusCode: '400' },
-    //     { statusCode: '500' }
-    //   ],
-    // });
 
     const llmsIntegration = new apigateway.LambdaIntegration(llmCallsLambda, {
       proxy: true,
